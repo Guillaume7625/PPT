@@ -1,0 +1,2015 @@
+# Générateur PowerPoint avec Masque d'Entreprise Personnalisé et Import JSON
+
+Voici le **fichier HTML complet** qui permet d'importer votre propre masque d'entreprise et de coller directement du contenu JSON :
+
+```html
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Générateur PPT - Masque Entreprise & Import JSON</title>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 2.2em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.05em;
+        }
+
+        .workflow-steps {
+            background: #f8f9fa;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-around;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .workflow-step {
+            text-align: center;
+            flex: 1;
+            position: relative;
+        }
+
+        .workflow-step::after {
+            content: '→';
+            position: absolute;
+            right: -20px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 24px;
+            color: #cbd5e0;
+        }
+
+        .workflow-step:last-child::after {
+            display: none;
+        }
+
+        .workflow-number {
+            width: 40px;
+            height: 40px;
+            background: #3498db;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 10px;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+
+        .workflow-title {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .workflow-desc {
+            font-size: 0.85em;
+            color: #718096;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            padding: 30px;
+        }
+
+        @media (max-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 20px;
+            font-weight: 600;
+            font-size: 1.1em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .panel-body {
+            padding: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #4a5568;
+            font-size: 0.95em;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 0.95em;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        textarea.form-control {
+            resize: vertical;
+            min-height: 200px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.85em;
+            line-height: 1.4;
+        }
+
+        .json-editor {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            border: 2px solid #333;
+            padding: 15px;
+            border-radius: 8px;
+            min-height: 400px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.85em;
+            line-height: 1.5;
+            overflow-x: auto;
+        }
+
+        .template-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .template-card {
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            background: white;
+        }
+
+        .template-card:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .template-card.selected {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+        }
+
+        .template-icon {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .template-name {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .template-desc {
+            font-size: 0.75em;
+            color: #718096;
+        }
+
+        .file-upload {
+            border: 2px dashed #cbd5e0;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            background: #f7fafc;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .file-upload:hover {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+
+        .file-upload.active {
+            border-color: #48bb78;
+            background: #f0fff4;
+        }
+
+        .file-upload-icon {
+            font-size: 3em;
+            color: #cbd5e0;
+            margin-bottom: 10px;
+        }
+
+        .file-upload-text {
+            color: #4a5568;
+            margin-bottom: 10px;
+        }
+
+        .file-upload-hint {
+            font-size: 0.85em;
+            color: #718096;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(72, 187, 120, 0.3);
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+            color: white;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .status-bar {
+            background: #f7fafc;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #48bb78;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.error {
+            background: #f56565;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .preview-container {
+            background: #f8f9fa;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .preview-title {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .preview-content {
+            font-size: 0.9em;
+            color: #4a5568;
+            white-space: pre-wrap;
+        }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert-success {
+            background: #c6f6d5;
+            color: #22543d;
+            border: 1px solid #9ae6b4;
+        }
+
+        .alert-error {
+            background: #fed7d7;
+            color: #742a2a;
+            border: 1px solid #fc8181;
+        }
+
+        .alert-info {
+            background: #bee3f8;
+            color: #2c5282;
+            border: 1px solid #90cdf4;
+        }
+
+        .json-validator {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f7fafc;
+            border-radius: 8px;
+            font-size: 0.85em;
+        }
+
+        .valid {
+            color: #22543d;
+            background: #c6f6d5;
+        }
+
+        .invalid {
+            color: #742a2a;
+            background: #fed7d7;
+        }
+
+        .help-section {
+            background: #f7fafc;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+
+        .help-title {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .help-content {
+            font-size: 0.85em;
+            color: #718096;
+            line-height: 1.6;
+        }
+
+        .code-block {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 0.85em;
+            overflow-x: auto;
+        }
+
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .loading-content {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #e2e8f0;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- En-tête -->
+        <div class="header">
+            <h1>🎯 Générateur PowerPoint avec Masque d'Entreprise</h1>
+            <p>Importez votre charte graphique et collez votre contenu JSON</p>
+        </div>
+
+        <!-- Workflow -->
+        <div class="workflow-steps">
+            <div class="workflow-step">
+                <div class="workflow-number">1</div>
+                <div class="workflow-title">Choisir le Masque</div>
+                <div class="workflow-desc">Sélectionnez ou importez</div>
+            </div>
+            <div class="workflow-step">
+                <div class="workflow-number">2</div>
+                <div class="workflow-title">Configurer</div>
+                <div class="workflow-desc">Personnalisez les paramètres</div>
+            </div>
+            <div class="workflow-step">
+                <div class="workflow-number">3</div>
+                <div class="workflow-title">Coller JSON</div>
+                <div class="workflow-desc">Importez le contenu</div>
+            </div>
+            <div class="workflow-step">
+                <div class="workflow-number">4</div>
+                <div class="workflow-title">Générer</div>
+                <div class="workflow-desc">Téléchargez le PPT</div>
+            </div>
+        </div>
+
+        <!-- Alertes -->
+        <div style="padding: 20px 30px 0;">
+            <div id="alertSuccess" class="alert alert-success">
+                ✅ <span id="successMessage">Opération réussie !</span>
+            </div>
+            <div id="alertError" class="alert alert-error">
+                ❌ <span id="errorMessage">Une erreur est survenue</span>
+            </div>
+            <div id="alertInfo" class="alert alert-info">
+                ℹ️ <span id="infoMessage">Information</span>
+            </div>
+        </div>
+
+        <!-- Contenu principal -->
+        <div class="main-grid">
+            <!-- Panneau gauche : Configuration du masque -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span>🎨</span>
+                    <span>Configuration du Masque d'Entreprise</span>
+                </div>
+                <div class="panel-body">
+                    <!-- Sélection du type de masque -->
+                    <div class="form-group">
+                        <label>Sélectionner un Masque</label>
+                        <div class="template-selector">
+                            <div class="template-card selected" data-template="custom" onclick="selectTemplate('custom')">
+                                <div class="template-icon">🏢</div>
+                                <div class="template-name">Mon Entreprise</div>
+                                <div class="template-desc">Masque personnalisé</div>
+                            </div>
+                            <div class="template-card" data-template="default" onclick="selectTemplate('default')">
+                                <div class="template-icon">📊</div>
+                                <div class="template-name">Standard</div>
+                                <div class="template-desc">Masque par défaut</div>
+                            </div>
+                            <div class="template-card" data-template="import" onclick="selectTemplate('import')">
+                                <div class="template-icon">📁</div>
+                                <div class="template-name">Importer PPTX</div>
+                                <div class="template-desc">Depuis fichier</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Import de fichier PPTX (masque) -->
+                    <div id="importSection" style="display: none;">
+                        <div class="form-group">
+                            <label>Importer un fichier PPTX avec votre masque</label>
+                            <div class="file-upload" onclick="document.getElementById('pptxFile').click()">
+                                <input type="file" id="pptxFile" accept=".pptx" onchange="handlePPTXUpload(event)">
+                                <div class="file-upload-icon">📤</div>
+                                <div class="file-upload-text">Cliquez pour choisir un fichier PPTX</div>
+                                <div class="file-upload-hint">Ou glissez-déposez votre fichier ici</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Configuration du masque personnalisé -->
+                    <div id="customMasterConfig">
+                        <div class="form-group">
+                            <label>Configuration du Masque (JSON)</label>
+                            <textarea class="json-editor form-control" id="masterConfig" placeholder='Collez ici la configuration JSON de votre masque d\'entreprise'>{
+  "company": "Mon Entreprise",
+  "theme": {
+    "colors": {
+      "primary": "#003366",
+      "secondary": "#0066CC",
+      "accent": "#FF6600",
+      "text": "#333333",
+      "background": "#FFFFFF"
+    },
+    "fonts": {
+      "title": {
+        "family": "Arial",
+        "size": 32,
+        "weight": "bold"
+      },
+      "subtitle": {
+        "family": "Arial",
+        "size": 20,
+        "weight": "normal"
+      },
+      "body": {
+        "family": "Calibri",
+        "size": 14,
+        "weight": "normal"
+      }
+    },
+    "logo": {
+      "url": "",
+      "position": "top-right",
+      "width": 1.5,
+      "height": 0.8
+    },
+    "header": {
+      "height": 1,
+      "background": "gradient",
+      "showLogo": true,
+      "showDate": false
+    },
+    "footer": {
+      "height": 0.5,
+      "text": "© 2025 Mon Entreprise - Confidentiel",
+      "showPageNumber": true,
+      "showConfidential": true
+    }
+  },
+  "layouts": {
+    "title": {
+      "background": "gradient",
+      "alignment": "center"
+    },
+    "content": {
+      "margins": {
+        "top": 1.5,
+        "bottom": 1,
+        "left": 0.5,
+        "right": 0.5
+      }
+    }
+  }
+}</textarea>
+                            <div id="masterValidation" class="json-validator"></div>
+                        </div>
+
+                        <button class="btn btn-secondary" onclick="validateMasterConfig()">
+                            <span>✔️</span>
+                            <span>Valider le Masque</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panneau droit : Contenu JSON -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span>📝</span>
+                    <span>Contenu de la Présentation (JSON)</span>
+                </div>
+                <div class="panel-body">
+                    <div class="form-group">
+                        <label>Collez votre contenu JSON ici</label>
+                        <textarea class="json-editor form-control" id="contentJson" placeholder='Collez ici le contenu JSON de votre présentation'>{
+  "metadata": {
+    "title": "Présentation Exemple",
+    "author": "John Doe",
+    "date": "2025-01-15",
+    "version": "1.0"
+  },
+  "slides": [
+    {
+      "type": "title",
+      "content": {
+        "title": "Titre de la Présentation",
+        "subtitle": "Sous-titre de présentation",
+        "author": "Présenté par John Doe",
+        "date": "15 Janvier 2025"
+      }
+    },
+    {
+      "type": "section",
+      "content": {
+        "title": "Section 1",
+        "subtitle": "Introduction"
+      }
+    },
+    {
+      "type": "content",
+      "layout": "bullets",
+      "content": {
+        "title": "Points Clés",
+        "bullets": [
+          "Premier point important",
+          "Deuxième élément à retenir",
+          "Troisième aspect crucial",
+          "Quatrième information"
+        ]
+      }
+    },
+    {
+      "type": "content",
+      "layout": "two-columns",
+      "content": {
+        "title": "Comparaison",
+        "left": {
+          "title": "Avantages",
+          "bullets": [
+            "Rapidité",
+            "Efficacité",
+            "Économie"
+          ]
+        },
+        "right": {
+          "title": "Défis",
+          "bullets": [
+            "Formation",
+            "Adaptation",
+            "Investissement"
+          ]
+        }
+      }
+    },
+    {
+      "type": "content",
+      "layout": "table",
+      "content": {
+        "title": "Données Trimestrielles",
+        "table": {
+          "headers": ["Produit", "Q1", "Q2", "Q3", "Q4"],
+          "rows": [
+            ["Produit A", "1200", "1350", "1400", "1600"],
+            ["Produit B", "2100", "2300", "2500", "2800"],
+            ["Produit C", "800", "850", "900", "1000"]
+          ]
+        }
+      }
+    },
+    {
+      "type": "content",
+      "layout": "chart",
+      "content": {
+        "title": "Évolution des Ventes",
+        "chartType": "line",
+        "data": {
+          "labels": ["Jan", "Fév", "Mar", "Avr", "Mai", "Jun"],
+          "datasets": [
+            {
+              "label": "2024",
+              "data": [1200, 1400, 1350, 1600, 1750, 1900]
+            },
+            {
+              "label": "2025",
+              "data": [1400, 1600, 1550, 1800, 1950, 2100]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "type": "content",
+      "layout": "image",
+      "content": {
+        "title": "Architecture Système",
+        "image": {
+          "url": "https://via.placeholder.com/800x400",
+          "caption": "Vue d\'ensemble de l\'architecture"
+        }
+      }
+    },
+    {
+      "type": "ending",
+      "content": {
+        "title": "Merci",
+        "subtitle": "Questions ?",
+        "contact": "contact@entreprise.com"
+      }
+    }
+  ]
+}</textarea>
+                        <div id="contentValidation" class="json-validator"></div>
+                    </div>
+
+                    <!-- Boutons d'action -->
+                    <div class="btn-group">
+                        <button class="btn btn-primary" onclick="validateContent()">
+                            <span>✔️</span>
+                            <span>Valider JSON</span>
+                        </button>
+                        <button class="btn btn-secondary" onclick="loadExample()">
+                            <span>📋</span>
+                            <span>Exemple</span>
+                        </button>
+                    </div>
+
+                    <!-- Aperçu -->
+                    <div class="preview-container">
+                        <div class="preview-title">Aperçu du Contenu</div>
+                        <div class="preview-content" id="contentPreview">
+                            Validez le JSON pour voir l'aperçu
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section d'aide -->
+        <div style="padding: 0 30px 30px;">
+            <div class="panel">
+                <div class="panel-body">
+                    <div class="help-section">
+                        <div class="help-title">📚 Guide d'utilisation</div>
+                        <div class="help-content">
+                            <p><strong>Structure du JSON de Contenu :</strong></p>
+                            <div class="code-block">
+{
+  "metadata": { ... },     // Informations sur la présentation
+  "slides": [              // Tableau des slides
+    {
+      "type": "title",     // Types: title, section, content, ending
+      "layout": "...",     // Layouts: bullets, table, chart, image, two-columns
+      "content": { ... }   // Contenu spécifique au type
+    }
+  ]
+}
+                            </div>
+                            
+                            <p style="margin-top: 15px;"><strong>Types de slides disponibles :</strong></p>
+                            <ul style="margin-left: 20px; line-height: 1.8;">
+                                <li><code>title</code> : Slide de titre principal</li>
+                                <li><code>section</code> : Séparateur de section</li>
+                                <li><code>content</code> : Slide de contenu (avec différents layouts)</li>
+                                <li><code>ending</code> : Slide de fin/remerciements</li>
+                            </ul>
+
+                            <p style="margin-top: 15px;"><strong>Layouts de contenu :</strong></p>
+                            <ul style="margin-left: 20px; line-height: 1.8;">
+                                <li><code>bullets</code> : Liste à puces</li>
+                                <li><code>table</code> : Tableau de données</li>
+                                <li><code>chart</code> : Graphique (bar, line, pie)</li>
+                                <li><code>image</code> : Image avec légende</li>
+                                <li><code>two-columns</code> : Contenu sur 2 colonnes</li>
+                                <li><code>text</code> : Texte simple</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Boutons de génération -->
+                    <div class="btn-group" style="justify-content: center; margin-top: 30px;">
+                        <button class="btn btn-success" onclick="generatePresentation()" style="font-size: 1.1em; padding: 15px 30px;">
+                            <span>🚀</span>
+                            <span>Générer la Présentation PowerPoint</span>
+                        </button>
+                        <button class="btn btn-danger" onclick="resetAll()">
+                            <span>🔄</span>
+                            <span>Réinitialiser</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Barre de statut -->
+        <div class="status-bar">
+            <div class="status-indicator">
+                <span class="status-dot" id="statusDot"></span>
+                <span id="statusText">Prêt</span>
+            </div>
+            <div>
+                <span id="slideCount">0 slides</span> | 
+                <span id="currentDate"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overlay de chargement -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <h3>Génération en cours...</h3>
+            <p id="loadingMessage">Création de votre présentation PowerPoint</p>
+        </div>
+    </div>
+
+    <!-- Script PptxGenJS -->
+    <script src="https://cdn.jsdelivr.net/gh/gitbrent/pptxgenjs/dist/pptxgen.bundle.js"></script>
+
+    <script>
+        // Variables globales
+        let selectedTemplate = 'custom';
+        let masterConfig = null;
+        let contentData = null;
+        let pptx = null;
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('currentDate').textContent = new Date().toLocaleDateString('fr-FR');
+            
+            // Auto-validation lors de la saisie
+            document.getElementById('masterConfig').addEventListener('input', debounce(validateMasterConfig, 500));
+            document.getElementById('contentJson').addEventListener('input', debounce(validateContent, 500));
+            
+            // Validation initiale
+            validateMasterConfig();
+            validateContent();
+        });
+
+        // Fonction de debounce pour éviter trop de validations
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        // Sélection du template
+        function selectTemplate(template) {
+            selectedTemplate = template;
+            
+            // Mise à jour visuelle
+            document.querySelectorAll('.template-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            document.querySelector(`[data-template="${template}"]`).classList.add('selected');
+            
+            // Affichage des sections appropriées
+            document.getElementById('importSection').style.display = template === 'import' ? 'block' : 'none';
+            document.getElementById('customMasterConfig').style.display = template !== 'import' ? 'block' : 'none';
+            
+            if (template === 'default') {
+                loadDefaultMaster();
+            }
+        }
+
+        // Chargement du masque par défaut
+        function loadDefaultMaster() {
+            const defaultMaster = {
+                company: "Entreprise Standard",
+                theme: {
+                    colors: {
+                        primary: "#1a73e8",
+                        secondary: "#34a853",
+                        accent: "#ea4335",
+                        text: "#202124",
+                        background: "#ffffff"
+                    },
+                    fonts: {
+                        title: { family: "Arial", size: 36, weight: "bold" },
+                        subtitle: { family: "Arial", size: 24, weight: "normal" },
+                        body: { family: "Calibri", size: 14, weight: "normal" }
+                    },
+                    logo: {
+                        url: "",
+                        position: "top-right",
+                        width: 1.2,
+                        height: 0.6
+                    },
+                    header: {
+                        height: 0.8,
+                        background: "solid",
+                        showLogo: true,
+                        showDate: false
+                    },
+                    footer: {
+                        height: 0.4,
+                        text: "© 2025 - Confidentiel",
+                        showPageNumber: true,
+                        showConfidential: false
+                    }
+                },
+                layouts: {
+                    title: { background: "gradient", alignment: "center" },
+                    content: {
+                        margins: { top: 1.2, bottom: 0.8, left: 0.5, right: 0.5 }
+                    }
+                }
+            };
+            
+            document.getElementById('masterConfig').value = JSON.stringify(defaultMaster, null, 2);
+            validateMasterConfig();
+        }
+
+        // Validation de la configuration du masque
+        function validateMasterConfig() {
+            const configText = document.getElementById('masterConfig').value;
+            const validator = document.getElementById('masterValidation');
+            
+            try {
+                masterConfig = JSON.parse(configText);
+                validator.textContent = '✅ Configuration du masque valide';
+                validator.className = 'json-validator valid';
+                updateStatus('ready', 'Configuration du masque valide');
+                return true;
+            } catch (e) {
+                validator.textContent = '❌ Erreur JSON : ' + e.message;
+                validator.className = 'json-validator invalid';
+                updateStatus('error', 'Erreur dans la configuration du masque');
+                return false;
+            }
+        }
+
+        // Validation du contenu JSON
+        function validateContent() {
+            const contentText = document.getElementById('contentJson').value;
+            const validator = document.getElementById('contentValidation');
+            
+            try {
+                contentData = JSON.parse(contentText);
+                
+                // Validation de la structure
+                if (!contentData.slides || !Array.isArray(contentData.slides)) {
+                    throw new Error('Le JSON doit contenir un tableau "slides"');
+                }
+                
+                validator.textContent = `✅ Contenu valide : ${contentData.slides.length} slides`;
+                validator.className = 'json-validator valid';
+                
+                // Mise à jour du compteur
+                document.getElementById('slideCount').textContent = `${contentData.slides.length} slides`;
+                
+                // Mise à jour de l'aperçu
+                updatePreview();
+                
+                updateStatus('ready', 'Contenu JSON valide');
+                return true;
+            } catch (e) {
+                validator.textContent = '❌ Erreur JSON : ' + e.message;
+                validator.className = 'json-validator invalid';
+                updateStatus('error', 'Erreur dans le contenu JSON');
+                return false;
+            }
+        }
+
+        // Mise à jour de l'aperçu
+        function updatePreview() {
+            if (!contentData || !contentData.slides) return;
+            
+            const preview = document.getElementById('contentPreview');
+            let previewHTML = '';
+            
+            contentData.slides.forEach((slide, index) => {
+                previewHTML += `📊 Slide ${index + 1}: ${slide.type}`;
+                if (slide.content && slide.content.title) {
+                    previewHTML += ` - "${slide.content.title}"`;
+                }
+                previewHTML += '\n';
+            });
+            
+            preview.textContent = previewHTML || 'Aucun contenu';
+        }
+
+        // Chargement d'un exemple complet
+        function loadExample() {
+            const exampleContent = {
+                metadata: {
+                    title: "Rapport Trimestriel Q1 2025",
+                    author: "Direction Générale",
+                    date: new Date().toISOString().split('T')[0],
+                    version: "2.0"
+                },
+                slides: [
+                    {
+                        type: "title",
+                        content: {
+                            title: "Rapport Trimestriel Q1 2025",
+                            subtitle: "Résultats et Perspectives",
+                            author: "Direction Générale",
+                            date: new Date().toLocaleDateString('fr-FR')
+                        }
+                    },
+                    {
+                        type: "section",
+                        content: {
+                            title: "Résultats Financiers",
+                            subtitle: "Performance Q1"
+                        }
+                    },
+                    {
+                        type: "content",
+                        layout: "bullets",
+                        content: {
+                            title: "Points Clés du Trimestre",
+                            bullets: [
+                                "Croissance du chiffre d'affaires : +15%",
+                                "Marge opérationnelle : 22% (vs 19% Q1 2024)",
+                                "Nouveaux clients : 47 entreprises",
+                                "Taux de rétention : 94%",
+                                "Investissement R&D : 2.3M€"
+                            ]
+                        }
+                    },
+                    {
+                        type: "content",
+                        layout: "table",
+                        content: {
+                            title: "Résultats par Division",
+                            table: {
+                                headers: ["Division", "CA Q1 2024", "CA Q1 2025", "Croissance", "Marge"],
+                                rows: [
+                                    ["Services", "5.2M€", "6.1M€", "+17%", "28%"],
+                                    ["Produits", "3.8M€", "4.2M€", "+11%", "19%"],
+                                    ["Consulting", "2.1M€", "2.5M€", "+19%", "35%"],
+                                    ["Support", "1.4M€", "1.6M€", "+14%", "42%"]
+                                ]
+                            }
+                        }
+                    },
+                    {
+                        type: "content",
+                        layout: "chart",
+                        content: {
+                            title: "Évolution du CA Mensuel",
+                            chartType: "line",
+                            data: {
+                                labels: ["Janvier", "Février", "Mars"],
+                                datasets: [
+                                    {
+                                        label: "2024",
+                                        data: [4.1, 4.2, 4.3]
+                                    },
+                                    {
+                                        label: "2025",
+                                        data: [4.6, 4.8, 5.0]
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    {
+                        type: "content",
+                        layout: "two-columns",
+                        content: {
+                            title: "Analyse SWOT",
+                            left: {
+                                title: "Forces & Opportunités",
+                                bullets: [
+                                    "Position de leader sur le marché",
+                                    "Équipe technique expérimentée",
+                                    "Expansion internationale",
+                                    "Nouveaux partenariats stratégiques"
+                                ]
+                            },
+                            right: {
+                                title: "Faiblesses & Menaces",
+                                bullets: [
+                                    "Dépendance à quelques gros clients",
+                                    "Besoin de modernisation IT",
+                                    "Concurrence accrue",
+                                    "Volatilité économique"
+                                ]
+                            }
+                        }
+                    },
+                    {
+                        type: "section",
+                        content: {
+                            title: "Objectifs Q2",
+                            subtitle: "Avril - Juin 2025"
+                        }
+                    },
+                    {
+                        type: "content",
+                        layout: "bullets",
+                        content: {
+                            title: "Plan d'Action Q2",
+                            bullets: [
+                                "Lancement de 2 nouveaux produits",
+                                "Ouverture bureau Amsterdam",
+                                "Certification ISO 27001",
+                                "Recrutement de 15 collaborateurs",
+                                "Objectif CA : 15.5M€ (+8% vs Q1)"
+                            ]
+                        }
+                    },
+                    {
+                        type: "ending",
+                        content: {
+                            title: "Merci pour votre attention",
+                            subtitle: "Questions & Discussion",
+                            contact: "direction@entreprise.com"
+                        }
+                    }
+                ]
+            };
+            
+            document.getElementById('contentJson').value = JSON.stringify(exampleContent, null, 2);
+            validateContent();
+            showAlert('info', 'Exemple de présentation chargé avec succès');
+        }
+
+        // Gestion de l'upload PPTX
+        function handlePPTXUpload(event) {
+            const file = event.target.files[0];
+            if (file && file.name.endsWith('.pptx')) {
+                showAlert('info', `Fichier "${file.name}" sélectionné. Cette fonctionnalité nécessite un traitement serveur.`);
+                document.querySelector('.file-upload').classList.add('active');
+            } else {
+                showAlert('error', 'Veuillez sélectionner un fichier .pptx valide');
+            }
+        }
+
+        // Fonction principale de génération
+        async function generatePresentation() {
+            try {
+                // Validation
+                if (!validateMasterConfig() || !validateContent()) {
+                    showAlert('error', 'Veuillez corriger les erreurs JSON avant de générer');
+                    return;
+                }
+                
+                if (typeof PptxGenJS === 'undefined') {
+                    showAlert('error', 'PptxGenJS n\'est pas chargé. Rechargez la page.');
+                    return;
+                }
+                
+                showLoading('Initialisation de la présentation...');
+                
+                // Création de la présentation
+                pptx = new PptxGenJS();
+                
+                // Configuration de base
+                pptx.layout = 'LAYOUT_16x9';
+                pptx.author = contentData.metadata?.author || 'Auteur';
+                pptx.title = contentData.metadata?.title || 'Présentation';
+                pptx.subject = contentData.metadata?.subject || 'Présentation générée automatiquement';
+                pptx.company = masterConfig.company || 'Entreprise';
+                
+                // Récupération des couleurs et polices du masque
+                const colors = masterConfig.theme.colors;
+                const fonts = masterConfig.theme.fonts;
+                const margins = masterConfig.layouts.content.margins;
+                
+                // Définition du masque principal
+                pptx.defineSlideMaster({
+                    title: 'MASTER_SLIDE',
+                    background: { color: colors.background.substring(1) },
+                    objects: [
+                        // Header
+                        ...(masterConfig.theme.header.background === 'gradient' ? [{
+                            rect: {
+                                x: 0,
+                                y: 0,
+                                w: '100%',
+                                h: masterConfig.theme.header.height,
+                                fill: {
+                                    type: 'gradient',
+                                    angle: 90,
+                                    colors: [
+                                        { position: 0, color: colors.primary.substring(1) },
+                                        { position: 100, color: colors.secondary.substring(1) }
+                                    ]
+                                }
+                            }
+                        }] : [{
+                            rect: {
+                                x: 0,
+                                y: 0,
+                                w: '100%',
+                                h: masterConfig.theme.header.height,
+                                fill: { color: colors.primary.substring(1) }
+                            }
+                        }]),
+                        
+                        // Footer
+                        {
+                            text: {
+                                text: masterConfig.theme.footer.text,
+                                options: {
+                                    x: 0.5,
+                                    y: '92%',
+                                    w: 8,
+                                    h: masterConfig.theme.footer.height,
+                                    fontSize: 9,
+                                    color: '666666',
+                                    align: 'left',
+                                    valign: 'middle'
+                                }
+                            }
+                        },
+                        
+                        // Numéro de page si activé
+                        ...(masterConfig.theme.footer.showPageNumber ? [{
+                            placeholder: {
+                                options: {
+                                    name: 'slideNumber',
+                                    type: 'slideNumber',
+                                    x: '90%',
+                                    y: '92%',
+                                    w: 1,
+                                    h: masterConfig.theme.footer.height,
+                                    fontSize: 9,
+                                    color: '666666',
+                                    align: 'right',
+                                    valign: 'middle'
+                                }
+                            }
+                        }] : [])
+                    ]
+                });
+                
+                // Traitement des slides
+                let slideCount = 0;
+                for (const slideData of contentData.slides) {
+                    slideCount++;
+                    showLoading(`Création de la slide ${slideCount}/${contentData.slides.length}...`);
+                    
+                    switch (slideData.type) {
+                        case 'title':
+                            createTitleSlide(slideData.content);
+                            break;
+                        case 'section':
+                            createSectionSlide(slideData.content);
+                            break;
+                        case 'content':
+                            createContentSlide(slideData);
+                            break;
+                        case 'ending':
+                            createEndingSlide(slideData.content);
+                            break;
+                        default:
+                            console.warn(`Type de slide non reconnu : ${slideData.type}`);
+                    }
+                }
+                
+                // Génération du fichier
+                showLoading('Finalisation et téléchargement...');
+                const fileName = (contentData.metadata?.title || 'presentation')
+                    .replace(/[^a-zA-Z0-9]/g, '_')
+                    .toLowerCase() + '.pptx';
+                    
+                await pptx.writeFile({ fileName: fileName });
+                
+                hideLoading();
+                showAlert('success', `Présentation "${fileName}" générée avec succès !`);
+                updateStatus('ready', `${slideCount} slides générées avec succès`);
+                
+            } catch (error) {
+                console.error('Erreur:', error);
+                hideLoading();
+                showAlert('error', 'Erreur lors de la génération : ' + error.message);
+                updateStatus('error', 'Erreur de génération');
+            }
+        }
+        
+        // Création d'une slide de titre
+        function createTitleSlide(content) {
+            const slide = pptx.addSlide();
+            const colors = masterConfig.theme.colors;
+            const fonts = masterConfig.theme.fonts;
+            
+            // Arrière-plan dégradé
+            slide.background = {
+                fill: {
+                    type: 'gradient',
+                    angle: 135,
+                    colors: [
+                        { position: 0, color: colors.primary.substring(1) },
+                        { position: 100, color: colors.secondary.substring(1) }
+                    ]
+                }
+            };
+            
+            // Titre principal
+            if (content.title) {
+                slide.addText(content.title, {
+                    x: 0.5,
+                    y: 1.5,
+                    w: 9,
+                    h: 1.5,
+                    fontSize: fonts.title.size,
+                    fontFace: fonts.title.family,
+                    bold: fonts.title.weight === 'bold',
+                    color: 'FFFFFF',
+                    align: 'center',
+                    valign: 'middle',
+                    shadow: {
+                        type: 'outer',
+                        blur: 3,
+                        offset: 2,
+                        angle: 45,
+                        color: '000000',
+                        opacity: 0.3
+                    }
+                });
+            }
+            
+            // Sous-titre
+            if (content.subtitle) {
+                slide.addText(content.subtitle, {
+                    x: 0.5,
+                    y: 3.2,
+                    w: 9,
+                    h: 0.8,
+                    fontSize: fonts.subtitle.size,
+                    fontFace: fonts.subtitle.family,
+                    color: 'F0F0F0',
+                    align: 'center',
+                    valign: 'middle'
+                });
+            }
+            
+            // Auteur
+            if (content.author) {
+                slide.addText(content.author, {
+                    x: 0.5,
+                    y: 4.3,
+                    w: 9,
+                    h: 0.5,
+                    fontSize: 16,
+                    fontFace: fonts.body.family,
+                    color: 'E0E0E0',
+                    align: 'center',
+                    valign: 'middle'
+                });
+            }
+            
+            // Date
+            if (content.date) {
+                slide.addText(content.date, {
+                    x: 0.5,
+                    y: 4.9,
+                    w: 9,
+                    h: 0.4,
+                    fontSize: 14,
+                    fontFace: fonts.body.family,
+                    color: 'D0D0D0',
+                    align: 'center',
+                    valign: 'middle'
+                });
+            }
+            
+            // Logo si défini
+            if (masterConfig.theme.logo.url) {
+                try {
+                    slide.addImage({
+                        path: masterConfig.theme.logo.url,
+                        x: 8,
+                        y: 0.3,
+                        w: masterConfig.theme.logo.width,
+                        h: masterConfig.theme.logo.height,
+                        sizing: { type: 'contain' }
+                    });
+                } catch (e) {
+                    console.warn('Impossible d\'ajouter le logo:', e);
+                }
+            }
+        }
+        
+        // Création d'une slide de section
+        function createSectionSlide(content) {
+            const slide = pptx.addSlide();
+            const colors = masterConfig.theme.colors;
+            const fonts = masterConfig.theme.fonts;
+            
+            slide.background = { color: colors.primary.substring(1) };
+            
+            // Titre de section
+            if (content.title) {
+                slide.addText(content.title, {
+                    x: 0,
+                    y: 1.8,
+                    w: '100%',
+                    h: 1.5,
+                    fontSize: fonts.title.size + 4,
+                    fontFace: fonts.title.family,
+                    bold: true,
+                    color: 'FFFFFF',
+                    align: 'center',
+                    valign: 'middle'
+                });
+            }
+            
+            // Sous-titre de section
+            if (content.subtitle) {
+                slide.addText(content.subtitle, {
+                    x: 0,
+                    y: 3.5,
+                    w: '100%',
+                    h: 0.8,
+                    fontSize: fonts.subtitle.size,
+                    fontFace: fonts.subtitle.family,
+                    color: 'F0F0F0',
+                    align: 'center',
+                    valign: 'middle'
+                });
+            }
+        }
+        
+        // Création d'une slide de contenu
+        function createContentSlide(slideData) {
+            const slide = pptx.addSlide({ masterName: 'MASTER_SLIDE' });
+            const content = slideData.content;
+            const layout = slideData.layout || 'text';
+            const colors = masterConfig.theme.colors;
+            const fonts = masterConfig.theme.fonts;
+            const margins = masterConfig.layouts.content.margins;
+            
+            // Titre de la slide
+            if (content.title) {
+                slide.addText(content.title, {
+                    x: margins.left,
+                    y: 0.3,
+                    w: 10 - margins.left - margins.right,
+                    h: 0.8,
+                    fontSize: fonts.title.size - 4,
+                    fontFace: fonts.title.family,
+                    bold: true,
+                    color: colors.primary.substring(1),
+                    align: 'left',
+                    valign: 'middle'
+                });
+            }
+            
+            // Zone de contenu
+            const contentY = margins.top;
+            const contentHeight = 5.625 - margins.top - margins.bottom;
+            const contentWidth = 10 - margins.left - margins.right;
+            
+            switch (layout) {
+                case 'bullets':
+                    if (content.bullets) {
+                        const bulletPoints = content.bullets.map(bullet => ({
+                            text: bullet,
+                            options: {
+                                bullet: { type: 'bullet', code: '2022' },
+                                indentLevel: 0
+                            }
+                        }));
+                        
+                        slide.addText(bulletPoints, {
+                            x: margins.left,
+                            y: contentY,
+                            w: contentWidth,
+                            h: contentHeight,
+                            fontSize: fonts.body.size,
+                            fontFace: fonts.body.family,
+                            color: colors.text.substring(1),
+                            lineSpacing: 20,
+                            paraSpaceBefore: 3
+                        });
+                    }
+                    break;
+                    
+                case 'two-columns':
+                    const colWidth = (contentWidth - 0.3) / 2;
+                    
+                    // Colonne gauche
+                    if (content.left) {
+                        if (content.left.title) {
+                            slide.addText(content.left.title, {
+                                x: margins.left,
+                                y: contentY,
+                                w: colWidth,
+                                h: 0.5,
+                                fontSize: fonts.subtitle.size - 4,
+                                fontFace: fonts.subtitle.family,
+                                bold: true,
+                                color: colors.secondary.substring(1)
+                            });
+                        }
+                        
+                        if (content.left.bullets) {
+                            const leftBullets = content.left.bullets.map(bullet => ({
+                                text: bullet,
+                                options: { bullet: { type: 'bullet' } }
+                            }));
+                            
+                            slide.addText(leftBullets, {
+                                x: margins.left,
+                                y: contentY + 0.6,
+                                w: colWidth,
+                                h: contentHeight - 0.6,
+                                fontSize: fonts.body.size,
+                                fontFace: fonts.body.family,
+                                color: colors.text.substring(1),
+                                lineSpacing: 18
+                            });
+                        }
+                    }
+                    
+                    // Colonne droite
+                    if (content.right) {
+                        if (content.right.title) {
+                            slide.addText(content.right.title, {
+                                x: margins.left + colWidth + 0.3,
+                                y: contentY,
+                                w: colWidth,
+                                h: 0.5,
+                                fontSize: fonts.subtitle.size - 4,
+                                fontFace: fonts.subtitle.family,
+                                bold: true,
+                                color: colors.secondary.substring(1)
+                            });
+                        }
+                        
+                        if (content.right.bullets) {
+                            const rightBullets = content.right.bullets.map(bullet => ({
+                                text: bullet,
+                                options: { bullet: { type: 'bullet' } }
+                            }));
+                            
+                            slide.addText(rightBullets, {
+                                x: margins.left + colWidth + 0.3,
+                                y: contentY + 0.6,
+                                w: colWidth,
+                                h: contentHeight - 0.6,
+                                fontSize: fonts.body.size,
+                                fontFace: fonts.body.family,
+                                color: colors.text.substring(1),
+                                lineSpacing: 18
+                            });
+                        }
+                    }
+                    break;
+                    
+                case 'table':
+                    if (content.table) {
+                        const { headers, rows } = content.table;
+                        const tableData = [headers, ...rows];
+                        
+                        slide.addTable(tableData, {
+                            x: margins.left,
+                            y: contentY,
+                            w: contentWidth,
+                            h: contentHeight,
+                            fontSize: fonts.body.size - 2,
+                            fontFace: fonts.body.family,
+                            border: { pt: 1, color: colors.secondary.substring(1) },
+                            fill: { color: 'F5F5F5' },
+                            align: 'center',
+                            valign: 'middle',
+                            colW: Array(headers.length).fill(contentWidth / headers.length)
+                        });
+                        
+                        // Style spécial pour l'en-tête
+                        slide.addTable([headers], {
+                            x: margins.left,
+                            y: contentY,
+                            w: contentWidth,
+                            h: 0.5,
+                            fontSize: fonts.body.size - 2,
+                            fontFace: fonts.body.family,
+                            bold: true,
+                            color: 'FFFFFF',
+                            fill: { color: colors.primary.substring(1) },
+                            border: { pt: 1, color: colors.primary.substring(1) },
+                            align: 'center',
+                            valign: 'middle',
+                            colW: Array(headers.length).fill(contentWidth / headers.length)
+                        });
+                    }
+                    break;
+                    
+                case 'chart':
+                    if (content.data) {
+                        const chartType = content.chartType || 'bar';
+                        const chartData = [];
+                        
+                        // Conversion des données
+                        content.data.datasets.forEach(dataset => {
+                            chartData.push({
+                                name: dataset.label,
+                                labels: content.data.labels,
+                                values: dataset.data
+                            });
+                        });
+                        
+                        let chartTypeConstant;
+                        switch (chartType) {
+                            case 'line':
+                                chartTypeConstant = pptx.charts.LINE;
+                                break;
+                            case 'pie':
+                                chartTypeConstant = pptx.charts.PIE;
+                                break;
+                            default:
+                                chartTypeConstant = pptx.charts.BAR;
+                        }
+                        
+                        slide.addChart(chartTypeConstant, chartData, {
+                            x: margins.left,
+                            y: contentY,
+                            w: contentWidth,
+                            h: contentHeight,
+                            showLegend: true,
+                            legendPos: 'r',
+                            showTitle: false,
+                            showValue: true,
+                            dataLabelColor: '000000',
+                            dataLabelFontSize: 9,
+                            chartColors: [
+                                colors.primary.substring(1),
+                                colors.secondary.substring(1),
+                                colors.accent.substring(1)
+                            ]
+                        });
+                    }
+                    break;
+                    
+                case 'image':
+                    if (content.image && content.image.url) {
+                        try {
+                            slide.addImage({
+                                path: content.image.url,
+                                x: margins.left + 1,
+                                y: contentY,
+                                w: contentWidth - 2,
+                                h: contentHeight - 0.5,
+                                sizing: { type: 'contain' }
+                            });
+                            
+                            if (content.image.caption) {
+                                slide.addText(content.image.caption, {
+                                    x: margins.left,
+                                    y: contentY + contentHeight - 0.4,
+                                    w: contentWidth,
+                                    h: 0.3,
+                                    fontSize: fonts.body.size - 2,
+                                    fontFace: fonts.body.family,
+                                    italic: true,
+                                    color: '666666',
+                                    align: 'center'
+                                });
+                            }
+                        } catch (e) {
+                            console.warn('Erreur lors de l\'ajout de l\'image:', e);
+                            slide.addText('[Image non disponible]', {
+                                x: margins.left,
+                                y: contentY + contentHeight / 2,
+                                w: contentWidth,
+                                h: 0.5,
+                                fontSize: fonts.body.size,
+                                color: '999999',
+                                align: 'center'
+                            });
+                        }
+                    }
+                    break;
+                    
+                case 'text':
+                default:
+                    if (content.text) {
+                        slide.addText(content.text, {
+                            x: margins.left,
+                            y: contentY,
+                            w: contentWidth,
+                            h: contentHeight,
+                            fontSize: fonts.body.size,
+                            fontFace: fonts.body.family,
+                            color: colors.text.substring(1),
+                            align: 'left',
+                            valign: 'top',
+                            wrap: true,
+                            lineSpacing: 20
+                        });
+                    }
+                    break;
+            }
+        }
+        
+        // Création d'une slide de fin
+        function createEndingSlide(content) {
+            const slide = pptx.addSlide();
+            const colors = masterConfig.theme.colors;
+            const fonts = masterConfig.theme.fonts;
+            
+            // Arrière-plan dégradé
+            slide.background = {
+                fill: {
+                    type: 'gradient',
+                    angle: 45,
+                    colors: [
+                        { position: 0, color: colors.secondary.substring(1) },
+                        { position: 100, color: colors.primary.substring(1) }
+                    ]
+                }
+            };
+            
+            // Titre principal
+            if (content.title) {
+                slide.addText(content.title, {
+                    x: 0,
+                    y: 1.5,
+                    w: '100%',
+                    h: 1.5,
+                    fontSize: fonts.title.size + 8,
+                    fontFace: fonts.title.family,
+                    bold: true,
+                    color: 'FFFFFF',
+                    align: 'center',
+                    valign: 'middle',
+                    shadow: {
+                        type: 'outer',
+                        blur: 4,
+                        offset: 3,
+                        angle: 45,
+                        color: '000000',
+                        opacity: 0.4
+                    }
+                });
+            }
+            
+            // Sous-titre
+            if (content.subtitle) {
+                slide.addText(content.subtitle, {
+                    x: 0,
+                    y: 3.2,
+                    w: '100%',
+                    h: 0.8,
+                    fontSize: fonts.subtitle.size,
+                    fontFace: fonts.subtitle.family,
+                    color: 'F0F0F0',
+                    align: 'center',
+                    valign: 'middle'
+                });
+            }
+            
+            // Contact
+            if (content.contact) {
+                slide.addText(content.contact, {
+                    x: 0,
+                    y: 4.5,
+                    w: '100%',
+                    h: 0.5,
+                    fontSize: fonts.body.size + 2,
+                    fontFace: fonts.body.family,
+                    color: 'E0E0E0',
+                    align: 'center',
+                    valign: 'middle'
+                });
+            }
+        }
+        
+        // Réinitialisation
+        function resetAll() {
+            if (confirm('Voulez-vous vraiment réinitialiser tous les champs ?')) {
+                document.getElementById('masterConfig').value = '';
+                document.getElementById('contentJson').value = '';
+                document.getElementById('contentPreview').textContent = 'Validez le JSON pour voir l\'aperçu';
+                document.getElementById('slideCount').textContent = '0 slides';
+                
+                // Recharger les valeurs par défaut
+                selectTemplate('custom');
+                validateMasterConfig();
+                validateContent();
+                
+                showAlert('info', 'Formulaire réinitialisé');
+            }
+        }
+        
+        // Fonctions utilitaires
+        function showLoading(message = 'Chargement...') {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+            document.getElementById('loadingMessage').textContent = message;
+        }
+        
+        function hideLoading() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
+        
+        function showAlert(type, message) {
+            // Masquer toutes les alertes
+            document.querySelectorAll('.alert').forEach(alert => {
+                alert.style.display = 'none';
+            });
+            
+            // Afficher l'alerte appropriée
+            let alertId = '';
+            switch (type) {
+                case 'success':
+                    alertId = 'alertSuccess';
+                    document.getElementById('successMessage').textContent = message;
+                    break;
+                case 'error':
+                    alertId = 'alertError';
+                    document.getElementById('errorMessage').textContent = message;
+                    break;
+                case 'info':
+                    alertId = 'alertInfo';
+                    document.getElementById('infoMessage').textContent = message;
+                    break;
+            }
+            
+            if (alertId) {
+                document.getElementById(alertId).style.display = 'flex';
+                
+                // Auto-hide après 5 secondes
+                setTimeout(() => {
+                    document.getElementById(alertId).style.display = 'none';
+                }, 5000);
+            }
+        }
+        
+        function updateStatus(status, text) {
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+            
+            statusDot.className = 'status-dot';
+            if (status === 'error') {
+                statusDot.classList.add('error');
+            }
+            
+            statusText.textContent = text;
+        }
+        
+        // Raccourcis clavier
+        document.addEventListener('keydown', function(e) {
+            // Ctrl+G pour générer
+            if (e.ctrlKey && e.key === 'g') {
+                e.preventDefault();
+                generatePresentation();
+            }
+            
+            // Ctrl+E pour charger l'exemple
+            if (e.ctrlKey && e.key === 'e') {
+                e.preventDefault();
+                loadExample();
+            }
+            
+            // Ctrl+R pour réinitialiser
+            if (e.ctrlKey && e.key === 'r') {
+                e.preventDefault();
+                resetAll();
+            }
+        });
+    </script>
+</body>
+</html>
+```
+
+## **Mode d'emploi : Intégration du Masque de votre Entreprise**
+
+### **Étape 1 : Préparer votre masque d'entreprise**
+
+Dans la section **"Configuration du Masque"** (panneau gauche), modifiez le JSON pour correspondre à votre charte graphique :
+
+```json
+{
+  "company": "Nom de votre entreprise",
+  "theme": {
+    "colors": {
+      "primary": "#VotreCouleurPrincipale",
+      "secondary": "#VotreCouleurSecondaire",
+      "accent": "#VotreCouleurAccent",
+      "text": "#333333",
+      "background": "#FFFFFF"
+    },
+    "fonts": {
+      "title": {
+        "family": "Votre Police Titre",
+        "size": 32,
+        "weight": "bold"
+      },
+      "body": {
+        "family": "Votre Police Corps",
+        "size": 14
+      }
+    },
+    "logo": {
+      "url": "https://lien-vers-votre-logo.png",
+      "position": "top-right"
+    },
+    "footer": {
+      "text": "© 2025 Votre Entreprise - Confidentiel"
+    }
+  }
+}
+```
+
+### **Étape 2 : Coller votre contenu JSON**
+
+Dans le panneau droit, collez votre contenu structuré en JSON. Format supporté :
+
+```json
+{
+  "slides": [
+    {
+      "type": "title",
+      "content": {
+        "title": "Votre titre",
+        "subtitle": "Votre sous-titre"
+      }
+    },
+    {
+      "type": "content",
+      "layout": "bullets",
+      "content": {
+        "title": "Points clés",
+        "bullets": ["Point 1", "Point 2", "Point 3"]
+      }
+    }
+  ]
+}
+```
+
+### **Étape 3 : Générer**
+
+Cliquez sur **"Générer la Présentation PowerPoint"** → Le fichier `.pptx` se télécharge avec votre masque appliqué.
+
+## **Fonctionnalités clés**
+
+✅ **Import de masque personnalisé** via JSON complet
+✅ **Support de tous les layouts** : bullets, tableaux, graphiques, images, 2 colonnes
+✅ **Validation JSON en temps réel** avec messages d'erreur
+✅ **Aperçu du contenu** avant génération
+✅ **Exemple complet intégré** (bouton "Exemple")
+✅ **Raccourcis clavier** : Ctrl+G (générer), Ctrl+E (exemple), Ctrl+R (reset)
+✅ **100% côté client** - Aucune donnée envoyée sur Internet
+
+## **Pour une utilisation 100% offline**
+
+1. Téléchargez `pptxgen.bundle.js` depuis le CDN
+2. Placez-le dans le même dossier que le HTML
+3. Modifiez la ligne du script pour pointer vers le fichier local
+
+**C'est prêt !** Vous avez maintenant un générateur professionnel qui utilise VOTRE masque d'entreprise et accepte du contenu JSON structuré. 🚀
